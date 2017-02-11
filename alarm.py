@@ -97,6 +97,8 @@ class AlarmManager:
 
 	def stop(self):
 		self.is_running = False
+		for alarm in self.alarms:
+			alarm.deactivate()
 
 	class AlarmManagerThread(threading.Thread):
 		def __init__(self, alarm_manager):
@@ -123,8 +125,11 @@ class AlarmManager:
 				sleep(0.1)
 
 def sigint_handler(signal, frame):
-	print('Closed by Ctrl+C')
+	print('\nCtrl+C received')
+	alarm_manager.stop()
 	sys.exit(0)
+
+alarm_manager = None
 
 if __name__ == "__main__":
 	signal.signal(signal.SIGINT, sigint_handler)
@@ -142,3 +147,5 @@ if __name__ == "__main__":
 		alarm_manager.add_alarm(alarm)
 	alarm_manager.start()
 	print "Press Ctrl+C to close on Linux or Ctrl+Break(Pause) on Windows"
+	while True:
+		sleep(1)
