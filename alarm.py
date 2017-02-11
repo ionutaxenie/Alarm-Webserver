@@ -3,12 +3,12 @@ import datetime
 import threading
 from time import sleep
 import json
+import signal
+import sys
 
 class Alarm:
 	def __init__(self, file_name="alarm.wav", alarm_type="fixed", date_time=datetime.datetime.now(), duration=30, alarm_data=None):
 		if alarm_data != None:
-			print alarm_data
-			print alarm_data['datetime']
 			_alarm_type = alarm_data['type']
 			_date_time = None
 			if _alarm_type == 'fixed':
@@ -119,12 +119,15 @@ class AlarmManager:
 						if not alarm.is_triggered and alarm.is_active:
 							if datetime.datetime.now() >= alarm.date_time:
 								self.has_alarm_triggered = True
-								print "starting alarm"
 								alarm.trigger()
 				sleep(0.1)
 
+def sigint_handler(signal, frame):
+	print('Closed by Ctrl+C')
+	sys.exit(0)
 
 if __name__ == "__main__":
+	signal.signal(signal.SIGINT, sigint_handler)
 	filename = "alarm.wav"
 	alarm_manager = AlarmManager()
 	with open('alarms.json', 'r') as json_file:
@@ -138,3 +141,4 @@ if __name__ == "__main__":
 		alarm.activate()
 		alarm_manager.add_alarm(alarm)
 	alarm_manager.start()
+	print "Press Ctrl+C to close on Linux or Ctrl+Break(Pause) on Windows"
