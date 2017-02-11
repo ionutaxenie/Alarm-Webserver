@@ -1,0 +1,14 @@
+{
+	"alarms" : [
+		{
+			"type":"fixed",
+			"datetime":"11.02.2017 22:25:00",
+			"duration": 5
+		},
+		{
+			"type":"repeat",
+			"datetime":"22:25:30",
+			"duration": 10
+		}
+	]
+}
