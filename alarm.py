@@ -5,6 +5,29 @@ from time import sleep
 import json
 import signal
 import sys
+import web
+
+urls = (
+	'/', 'AlarmServer'
+	)
+
+class AlarmServer:
+	def POST(self):
+		json_data = json.loads(web.data())
+		alarms = json_data['alarms']
+		web.ctx.globals.alarm_manager.remove_alarms()
+		for alarm_data in alarms:
+			alarm = Alarm(file_name=web.ctx.globals.file_name, alarm_data=alarm_data)
+			alarm.activate()
+			web.ctx.globals.alarm_manager.add_alarm(alarm)
+		if not web.ctx.globals.alarm_manager.is_running:
+			web.ctx.globals.alarm_manager.start()
+		res = 'Registered the following alarms:\n\n'
+		for alarm in web.ctx.globals.alarm_manager.alarms:
+			res += alarm.get_info()
+			res += '\n'
+		print res
+		return res
 
 class Alarm:
 	def __init__(self, file_name="alarm.wav", alarm_type="fixed", date_time=datetime.datetime.now(), duration=30, alarm_data=None):
@@ -45,6 +68,11 @@ class Alarm:
 		self.is_triggered = False
 		self.thread = self.AlarmThread(self)
 
+	def get_info(self):
+		info = 'Alarm options:\nType: {}\nDate-time: {}\nDuration: {}\n'.format(
+			self.alarm_type, self.date_time.ctime(), self.duration)
+		return info
+
 	def compute_endtime(self):
 		return (self.date_time + datetime.timedelta(seconds = self.duration))
 
@@ -84,11 +112,14 @@ class Alarm:
 class AlarmManager:
 	def __init__(self):
 		self.alarms = []
+		self.is_running = False
 		self.thread = self.AlarmManagerThread(self)
 
 	def add_alarm(self, alarm):
 		self.alarms.append(alarm)
-		self.is_running = False
+
+	def remove_alarms(self):
+		self.alarms = []
 
 	def start(self):
 		if not self.is_running:
@@ -125,27 +156,28 @@ class AlarmManager:
 				sleep(0.1)
 
 def sigint_handler(signal, frame):
-	print('\nCtrl+C received')
+	print('\nCtrl+C received. Exiting...')
 	alarm_manager.stop()
-	sys.exit(0)
+	webserver.stop()
+
+def add_global_hook():
+	g = web.storage({"alarm_manager" : alarm_manager,
+					"file_name" : filename})
+	def _wrapper(handler):
+		web.ctx.globals = g
+		return handler()
+	return _wrapper
 
 alarm_manager = None
+webserver = None
+filename = "alarm.wav"
 
 if __name__ == "__main__":
 	signal.signal(signal.SIGINT, sigint_handler)
-	filename = "alarm.wav"
 	alarm_manager = AlarmManager()
-	with open('alarms.json', 'r') as json_file:
-		json_string = json_file.read()
-
-	json_data = json.loads(json_string)
-	alarms = json_data['alarms']
-
-	for alarm_data in alarms:
-		alarm = Alarm(file_name=filename, alarm_data=alarm_data)
-		alarm.activate()
-		alarm_manager.add_alarm(alarm)
-	alarm_manager.start()
-	print "Press Ctrl+C to close on Linux or Ctrl+Break(Pause) on Windows"
-	while True:
-		sleep(1)
+	webserver = web.application(urls, globals())
+	webserver.add_processor(add_global_hook())
+	web.config.debug = False
+	print "Press Ctrl+C to close"
+	webserver.run()
+	sys.exit(0)
