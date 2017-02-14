@@ -1,0 +1,10 @@
+[Unit]
+Description=Starts the Python alarm script
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python /home/pi/alarm/alarm.py
+
+[Install]
+WantedBy=multi-user.target
