@@ -6,6 +6,7 @@ import json
 import signal
 import sys
 import web
+import os
 
 urls = (
 	'/', 'AlarmServer'
@@ -90,14 +91,18 @@ class Alarm:
 		def run(self):
 			if self.alarm.is_active:			
 				self.alarm.is_triggered = True
-				pygame.mixer.music.load(self.alarm.file_name)
 				while self.alarm.is_active == True and self.alarm.end_time > datetime.datetime.now():
-					if pygame.mixer.music.get_busy():
+					if pygame.mixer.get_init() is None:
+						pygame.mixer.init()
+						pygame.mixer.music.load(self.alarm.file_name)
+					elif pygame.mixer.music.get_busy():
 						sleep(0.1)
 					else:
 						pygame.mixer.music.rewind()
 						pygame.mixer.music.play()
-				pygame.mixer.music.stop()
+				if pygame.mixer.get_init() is not None:
+					pygame.mixer.music.stop()
+					pygame.mixer.quit()
 				self.alarm.is_triggered = False
 				if self.alarm.alarm_type == 'repeat':
 					self.alarm.date_time = self.alarm.date_time + datetime.timedelta(days = 1)
@@ -133,7 +138,6 @@ class AlarmManager:
 
 	class AlarmManagerThread(threading.Thread):
 		def __init__(self, alarm_manager):
-			pygame.mixer.init()
 			threading.Thread.__init__(self)
 			self.alarm_manager = alarm_manager
 			self.has_alarm_triggered = False
@@ -170,9 +174,10 @@ def add_global_hook():
 
 alarm_manager = None
 webserver = None
-filename = "alarm.wav"
+filename = ""
 
 if __name__ == "__main__":
+	filename = os.path.dirname(os.path.realpath(__file__)) + "/alarm.wav"
 	signal.signal(signal.SIGINT, sigint_handler)
 	alarm_manager = AlarmManager()
 	webserver = web.application(urls, globals())
