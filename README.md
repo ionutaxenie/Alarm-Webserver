@@ -4,3 +4,4 @@ Dependencies:
 - Python 2.7
 - pygame
 - webpy
+- RPi.GPIO
