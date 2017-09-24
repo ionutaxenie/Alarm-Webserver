@@ -7,6 +7,7 @@ import signal
 import sys
 import web
 import os
+import RPi.GPIO as GPIO
 
 urls = (
 	'/', 'AlarmServer'
@@ -91,7 +92,7 @@ class Alarm:
 		def run(self):
 			if self.alarm.is_active:			
 				self.alarm.is_triggered = True
-				while self.alarm.is_active == True and self.alarm.end_time > datetime.datetime.now():
+				while self.alarm.is_active == True and self.alarm.end_time > datetime.datetime.now() and GPIO.input(gpio_pin) == 1:
 					if pygame.mixer.get_init() is None:
 						pygame.mixer.init()
 						pygame.mixer.music.load(self.alarm.file_name)
@@ -154,7 +155,7 @@ class AlarmManager:
 				if not self.has_alarm_triggered:
 					for alarm in self.alarm_manager.alarms:
 						if not alarm.is_triggered and alarm.is_active:
-							if datetime.datetime.now() >= alarm.date_time:
+							if datetime.datetime.now() >= alarm.date_time and GPIO.input(gpio_pin) == 1:
 								self.has_alarm_triggered = True
 								alarm.trigger()
 				sleep(0.1)
@@ -175,8 +176,11 @@ def add_global_hook():
 alarm_manager = None
 webserver = None
 filename = ""
+gpio_pin = 4
 
 if __name__ == "__main__":
+	GPIO.setmode(GPIO.BCM)
+	GPIO.setup(4, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 	filename = os.path.dirname(os.path.realpath(__file__)) + "/alarm.wav"
 	signal.signal(signal.SIGINT, sigint_handler)
 	alarm_manager = AlarmManager()
