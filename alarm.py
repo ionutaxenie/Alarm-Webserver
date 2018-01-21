@@ -24,6 +24,12 @@ class AlarmServer:
 			web.ctx.globals.alarm_manager.add_alarm(alarm)
 		if not web.ctx.globals.alarm_manager.is_running:
 			web.ctx.globals.alarm_manager.start()
+		return self.print_alarms()
+			
+	def GET(self):
+		return self.print_alarms()
+	
+	def print_alarms(self):
 		res = 'Registered the following alarms:\n\n'
 		for alarm in web.ctx.globals.alarm_manager.alarms:
 			res += alarm.get_info()
