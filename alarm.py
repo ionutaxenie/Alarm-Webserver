@@ -155,7 +155,7 @@ class AlarmManager:
 				if not self.has_alarm_triggered:
 					for alarm in self.alarm_manager.alarms:
 						if not alarm.is_triggered and alarm.is_active:
-							if datetime.datetime.now() >= alarm.date_time and GPIO.input(gpio_pin) == 1:
+							if datetime.datetime.now() >= alarm.date_time:
 								self.has_alarm_triggered = True
 								alarm.trigger()
 				sleep(0.1)
