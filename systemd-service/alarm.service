@@ -4,6 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=idle
+WorkingDirectory=/home/pi/alarm
 ExecStart=/usr/bin/python /home/pi/alarm/alarm.py
 
 [Install]
